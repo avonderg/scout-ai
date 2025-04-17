@@ -1,11 +1,15 @@
 import tensorflow as tf
+import keras2onnx
+import onnx
 import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.layers import (Input, Conv2D, DepthwiseConv2D, MaxPooling2D,
+                                     Flatten, Dense, Dropout, BatchNormalization, ReLU)
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 
 # === Load CSV with image paths and labels ===
 df = pd.read_csv("model/labels.csv")
@@ -16,7 +20,6 @@ num_species = len(species_list)
 
 # === Preprocessing function ===
 def process_image(image_path, label):
-    # Decode image_path (if it's a Tensor)
     image_path = image_path.numpy().decode() if isinstance(image_path.numpy(), bytes) else image_path.numpy()
     full_path = os.path.join("data/CUB_200_2011/images", image_path)
     image = load_img(full_path, target_size=(224, 224))
@@ -43,27 +46,64 @@ val_size = int(0.2 * len(image_paths))
 val_ds = full_ds.take(val_size).batch(32).prefetch(tf.data.AUTOTUNE)
 train_ds = full_ds.skip(val_size).batch(32).prefetch(tf.data.AUTOTUNE)
 
-# === Define model ===
-model = Sequential([
-    Input(shape=(224, 224, 3)),
-    Conv2D(32, (3, 3), activation='relu'),
-    MaxPooling2D(2, 2),
-    Conv2D(64, (3, 3), activation='relu'),
-    MaxPooling2D(2, 2),
-    Flatten(),
-    Dense(512, activation='relu'),
-    Dropout(0.5),
-    Dense(num_species, activation='softmax')
+# === Define MiniBirdNet (MobileNet-style custom CNN) ===
+def depthwise_block(filters):
+    return [
+        DepthwiseConv2D(kernel_size=3, padding='same'),
+        BatchNormalization(),
+        ReLU(),
+        Conv2D(filters, kernel_size=1, padding='same'),
+        BatchNormalization(),
+        ReLU(),
+        MaxPooling2D(2, 2),
+        Dropout(0.25)
+    ]
+
+base_model = tf.keras.applications.MobileNetV2(
+    input_shape=(224, 224, 3),
+    include_top=False,         # We don't want the 1000 ImageNet classes
+    weights='imagenet'         # Load pretrained weights
+)
+
+base_model.trainable = False  # Freeze it for now
+
+model = tf.keras.Sequential([
+    base_model,
+    tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dropout(0.3),
+    tf.keras.layers.Dense(num_species, activation='softmax')
 ])
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
+# === Callbacks ===
+lr_callback = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, verbose=1)
+early_stop = EarlyStopping(monitor='val_loss', patience=4, restore_best_weights=True)
+checkpoint = ModelCheckpoint(
+    "/content/drive/MyDrive/bird-models/bird_classifier_epoch_{epoch:02d}.keras",
+    save_best_only=False,
+    save_freq='epoch',
+    verbose=1
+)
 # === Train model ===
-history = model.fit(train_ds, validation_data=val_ds, epochs=10)
+history = model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=30,
+    callbacks=[lr_callback, early_stop, checkpoint],
+    verbose=1
+)
 
 # === Save model ===
-model.save("model/bird_classifier.h5")
-print("✅ Model saved to model/bird_classifier.h5")
+model.save("model/bird_classifier_final.keras")
+print("✅ Final model saved to model/bird_classifier_final.keras")
+# Convert to ONNX
+onnx_model = keras2onnx.convert_keras(model, model.name)
+
+# Save it
+onnx.save_model(onnx_model, "model/bird_classifier.onnx")
+print("✅ ONNX model saved!")
 
 # === Plot accuracy & loss ===
 acc = history.history['accuracy']
