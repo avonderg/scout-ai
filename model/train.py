@@ -128,3 +128,34 @@ plt.legend()
 plt.tight_layout()
 plt.savefig("training_metrics.png")
 plt.show()
+
+
+## CONVERT AND DOWNLOAD AS ONNX FILE
+import tensorflow as tf
+import tf2onnx
+
+keras_model = "/content/drive/MyDrive/bird-models/bird_classifier_epoch_30.keras"
+model = tf.keras.models.load_model(keras_model)
+model.output_names = [t.name.split(":")[0] for t in model.outputs]
+
+# 2️⃣ Define the input signature matching your model's input
+input_signature = (
+    tf.TensorSpec((None, 224, 224, 3), tf.float32, name="input_tensor"),
+)
+
+# 3️⃣ Convert to ONNX
+onnx_model_proto, _ = tf2onnx.convert.from_keras(
+    model,
+    input_signature=input_signature,
+    opset=13
+)
+
+# 5️⃣ Save the resulting ONNX file
+import onnx
+onnx_path = "/content/drive/MyDrive/bird-models/bird_classifier.onnx"
+onnx.save_model(onnx_model_proto, onnx_path)
+print("✅ ONNX model saved to", onnx_path)
+
+# 6️⃣ (Optional) Download it right away
+from google.colab import files
+files.download(onnx_path)
