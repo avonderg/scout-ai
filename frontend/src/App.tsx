@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   CssBaseline,
   Container,
@@ -60,6 +60,7 @@ function App() {
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const uploadRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const predict = async () => {
     if (!file) return;
@@ -70,7 +71,33 @@ function App() {
       body: form,
     });
     setResult(await res.json());
-    scroll.scrollTo(uploadRef.current?.offsetTop ?? 0, { smooth: true });
+  };
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      scroll.scrollTo(resultRef.current.offsetTop - 400, {
+        smooth: true,
+      });
+    }
+  }, [result]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  console.log(result.confidence);
+
+  const getConfidenceLabel = (confidence: string) => {
+    const value =
+      typeof confidence === "string"
+        ? parseFloat(confidence.replace("%", ""))
+        : confidence;
+
+    if (value >= 90) return "Very High";
+    if (value >= 75) return "High";
+    if (value >= 60) return "Moderate";
+    if (value >= 40) return "Low";
+    return "Very Low";
   };
 
   return (
@@ -150,7 +177,11 @@ function App() {
           variant="contained"
           size="large"
           color="primary"
-          onClick={() => scroll.scrollTo(window.innerHeight, { smooth: true })}
+          onClick={() =>
+            scroll.scrollTo((uploadRef.current?.offsetTop ?? 0) - 80, {
+              smooth: true,
+            })
+          }
         >
           Try It Now
         </Button>
@@ -163,6 +194,9 @@ function App() {
         sx={{
           py: 8,
           px: 2,
+          minHeight: "100vh",
+          alignItems: "center",
+          justifyContent: "center",
           // background: theme.palette.background.default,
         }}
       >
@@ -205,6 +239,16 @@ function App() {
                   const files = e.target.files;
                   if (files && files[0]) {
                     const f = files[0];
+
+                    // Validate MIME type
+                    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+                    if (!validTypes.includes(f.type)) {
+                      alert(
+                        "Unsupported file type. Please upload a JPEG or PNG image."
+                      );
+                      return;
+                    }
+
                     setFile(f);
                     const url = URL.createObjectURL(f);
                     setPreview(url);
@@ -239,13 +283,38 @@ function App() {
           </Paper>
 
           {result && (
-            <Card sx={{ mt: 4 }}>
+            <Card
+              ref={resultRef}
+              sx={{
+                mt: 4,
+                p: 4,
+                textAlign: "center",
+                backdropFilter: "blur(7.5px)",
+                // backgroundColor: "rgba(255, 255, 255, 0.3)",
+                WebkitBackdropFilter: "blur(7.5px)",
+                borderRadius: "10px",
+                boxShadow: "0 8px 32px 0 rgba( 0, 0, 0, 0.18 )",
+                border: "2px solid rgba(255, 255, 255, 0.4)", // More visible white border
+                backgroundImage:
+                  "linear-gradient(to bottom right, rgba(255,255,255,0.25), rgba(255,255,255,0.05))",
+              }}
+            >
               <CardContent>
                 <Typography variant="h6">
-                  We think it’s a <strong>{result.species}</strong>
+                  We think it’s a{" "}
+                  <strong style={{ color: "#7877E6" }}>
+                    {
+                      result.species
+                        .replace(/^\d+\./, "") // remove number prefix
+                        .replace(/_/g, " ") // replace underscores with space
+                    }
+                  </strong>
                 </Typography>
                 <Typography color="text.secondary">
-                  Confidence: {result.confidence}
+                  Confidence: <strong>{result.confidence + " "}</strong>
+                  <span style={{ fontStyle: "italic" }}>
+                    ({getConfidenceLabel(result.confidence)})
+                  </span>
                 </Typography>
               </CardContent>
             </Card>
