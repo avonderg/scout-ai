@@ -362,16 +362,30 @@ function App() {
             About Scout
           </Typography>
           <Typography variant="body1" sx={{ color: "#4F4F4F", mb: 2 }}>
-            Scout was born out of a shared love for birds between my mom and me.
-            What started as a simple hobby of spotting cardinals and hawks on
-            walks turned into a passion for birdwatching — and now, this
-            project.
+            Ever since I was little, I’ve been drawn to animals of all shapes
+            and sizes—especially birds. Growing up, one of my favorite outings
+            was visiting Miami’s Parrot Jungle with my parents. During the
+            pandemic, my mom and I began spending more time outdoors together,
+            paying close attention to the wildlife in our neighborhood. Spotting
+            great blue herons, egrets, ospreys, cardinals, and the 16 wild
+            parrots that visit our backyard twice a day became a daily ritual
+            for us. We’d listen for their calls, learn their behaviors, and
+            deepen our appreciation for the beauty and subtle spirituality of
+            nature. Scout was born out of that shared tradition. It’s my way of
+            sharing this joy with others: a virtual companion - a{" "}
+            <strong>Scout</strong>- that helps you identify the birds around
+            you, spark curiosity, and gradually learn to recognize each species,
+            just as my mom and I did.
           </Typography>
           <Typography variant="body1" sx={{ color: "#4F4F4F" }}>
-            Scout uses a custom-trained computer vision model inspired by
-            MobileNet to identify over 200 species of birds from the
-            CUB-200-2011 dataset. It's powered by a TensorFlow-to-ONNX pipeline
-            and runs predictions through a FastAPI backend.
+            Scout uses a custom-trained image classification model based on
+            MobileNetV2 and fine-tuned on over 200 bird species from the
+            CUB-200-2011 dataset. To help the model generalize to real-world
+            scenarios—including blurry or zoomed-out iPhone photos—it leverages
+            dynamic data augmentation techniques like random cropping, rotation,
+            and color jittering during training. The pipeline is built in
+            TensorFlow, converted to ONNX for efficient inference, and served
+            through a lightweight FastAPI backend.
           </Typography>
         </Box>
       </Box>
