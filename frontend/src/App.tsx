@@ -66,7 +66,7 @@ function App() {
     if (!file) return;
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("http://127.0.0.1:8000/predict", {
+    const res = await fetch("https://bird-identifier-iqjp.onrender.com", {
       method: "POST",
       body: form,
     });
