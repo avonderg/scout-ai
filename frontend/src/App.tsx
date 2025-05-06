@@ -85,8 +85,6 @@ function App() {
     window.scrollTo(0, 0);
   }, []);
 
-  console.log(result.confidence);
-
   const getConfidenceLabel = (confidence: string) => {
     const value =
       typeof confidence === "string"
