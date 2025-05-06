@@ -1,8 +1,7 @@
 services:
-  - type: static
+  - type: web
     name: scout-frontend
-    runtime: node
     env: node
     plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: build
+    buildCommand: npm install
+    startCommand: npm start
