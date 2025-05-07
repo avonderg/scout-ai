@@ -8,6 +8,8 @@ import {
   Paper,
   Card,
   CardContent,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import "@fontsource/capriola";
@@ -59,18 +61,41 @@ function App() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+
   const uploadRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const predict = async () => {
     if (!file) return;
+
+    setError(null);
+
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("https://bird-identifier-iqjp.onrender.com", {
-      method: "POST",
-      body: form,
-    });
-    setResult(await res.json());
+
+    try {
+      const res = await fetch(
+        "https://bird-identifier-iqjp.onrender.com/predict",
+        {
+          method: "POST",
+          body: form,
+        }
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server responded with ${res.status}: ${errText}`);
+      }
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err: any) {
+      console.error("Prediction error:", err);
+      setError("Oops! Something went wrong while identifying your bird.");
+      setOpenSnackbar(true);
+    }
   };
 
   useEffect(() => {
@@ -395,6 +420,16 @@ function App() {
       >
         <Typography variant="body2">© 2025 avonderg</Typography>
       </Box>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={5000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setOpenSnackbar(false)} severity="error">
+          {error}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
   );
 }
