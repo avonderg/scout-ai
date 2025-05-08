@@ -1,5 +1,4 @@
 import tensorflow as tf
-import keras2onnx
 import onnx
 import pandas as pd
 import numpy as np
@@ -98,12 +97,6 @@ history = model.fit(
 # === Save model ===
 model.save("model/bird_classifier_final.keras")
 print("✅ Final model saved to model/bird_classifier_final.keras")
-# Convert to ONNX
-onnx_model = keras2onnx.convert_keras(model, model.name)
-
-# Save it
-onnx.save_model(onnx_model, "model/bird_classifier.onnx")
-print("✅ ONNX model saved!")
 
 # === Plot accuracy & loss ===
 acc = history.history['accuracy']
