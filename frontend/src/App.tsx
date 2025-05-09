@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CssBaseline,
   Container,
@@ -11,6 +11,7 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Link,
 } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import "@fontsource/capriola";
@@ -469,13 +470,21 @@ function App() {
             sharing this joy with others: a virtual companion - a{" "}
             <strong style={{ color: "#7877E6" }}>Scout</strong>- that helps you
             identify the birds around you, spark curiosity, and gradually learn
-            to recognize each species, just as my mom and I did.
+            to recognize each species, just as my mom and I have.
           </Typography>
           <Typography variant="body1" sx={{ color: "#4F4F4F", mb: 2 }}>
             Scout uses a custom image-classification model based on MobileNetV2,
             fine-tuned on over 200 bird species via transfer learning on more
-            than 5,000 high-resolution photos from the CUB-200-2011 dataset. The
-            model is trained in TensorFlow, converted to ONNX for faster
+            than 11,000 high-resolution photos from the{" "}
+            <Link
+              href="https://www.kaggle.com/datasets/wenewone/cub2002011/data"
+              target="_blank"
+              rel="noopener"
+              sx={{ fontWeight: "bold" }}
+            >
+              CUB-200-2011 dataset
+            </Link>
+            . The model is trained in TensorFlow, converted to ONNX for faster
             inference, and served through a FastAPI backend.
           </Typography>
           <Typography variant="body1" sx={{ color: "#4F4F4F", mb: 2 }}>
