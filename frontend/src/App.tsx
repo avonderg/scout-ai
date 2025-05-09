@@ -109,7 +109,7 @@ function App() {
         }),
       });
       const gptData = await gptRes.json();
-      setDescription(gptData);
+      setDescription(gptData.description);
     } catch (err: any) {
       console.error("Prediction error:", err);
       setError("Oops! Something went wrong while identifying your bird.");
