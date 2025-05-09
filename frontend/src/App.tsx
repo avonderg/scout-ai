@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   CssBaseline,
   Container,
@@ -11,13 +11,14 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  Link,
 } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import "@fontsource/capriola";
 
 import { animateScroll as scroll } from "react-scroll";
 import Lottie from "lottie-react";
-import birdAnimation from "./birdAnimation.json"; // import your Lottie JSON
+import birdAnimation from "./birdAnimation.json";
 
 const theme = createTheme({
   palette: {
@@ -65,6 +66,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingDescription, setLoadingDescription] = useState(false);
+
   const [description, setDescription] = useState("");
 
   const uploadRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ function App() {
       const data = await res.json();
       setResult(data);
       setSuccessToast(true);
-
+      setLoadingDescription(true);
       // Get GPT-based bird description
       const gptRes = await fetch("/api/describe", {
         method: "POST",
@@ -116,6 +119,7 @@ function App() {
       setOpenSnackbar(true);
     } finally {
       setLoading(false);
+      setLoadingDescription(false);
     }
   };
 
@@ -396,7 +400,13 @@ function App() {
                   {result.confidence} sure —{" "}
                   {getConfidenceMood(result.confidence).phrase}
                 </Typography>
-                {description && (
+                {loadingDescription && (
+                  <Typography sx={{ mt: 2, fontStyle: "italic" }}>
+                    Fetching a fun fact... ✨
+                  </Typography>
+                )}
+
+                {!loadingDescription && description && (
                   <Typography sx={{ mt: 2, fontStyle: "italic" }}>
                     {description}
                   </Typography>
@@ -458,19 +468,34 @@ function App() {
             deepen our appreciation for the beauty and subtle spirituality of
             nature. Scout was born out of that shared tradition. It’s my way of
             sharing this joy with others: a virtual companion - a{" "}
-            <strong>Scout</strong>- that helps you identify the birds around
-            you, spark curiosity, and gradually learn to recognize each species,
-            just as my mom and I did.
+            <strong style={{ color: "#7877E6" }}>Scout</strong>- that helps you
+            identify the birds around you, spark curiosity, and gradually learn
+            to recognize each species, just as my mom and I have.
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#4F4F4F", mb: 2 }}>
+            Scout uses a custom image-classification model based on MobileNetV2,
+            fine-tuned on over 200 bird species via transfer learning on more
+            than 11,000 high-resolution photos from the{" "}
+            <Link
+              href="https://www.kaggle.com/datasets/wenewone/cub2002011/data"
+              target="_blank"
+              rel="noopener"
+              sx={{ fontWeight: "bold" }}
+            >
+              CUB-200-2011 dataset
+            </Link>
+            . The model is trained in TensorFlow, converted to ONNX for faster
+            inference, and served through a FastAPI backend.
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#4F4F4F", mb: 2 }}>
+            Because CUB-200-2011 consists of high-resolution, tightly cropped
+            photos of individual birds, Scout performs best on similarly
+            zoomed-in, well-framed shots—though it may be less accurate on
+            wide-angle or very low-resolution images.
           </Typography>
           <Typography variant="body1" sx={{ color: "#4F4F4F" }}>
-            Scout uses a custom-trained image classification model based on
-            MobileNetV2 and fine-tuned on over 200 bird species from the
-            CUB-200-2011 dataset. To help the model generalize to real-world
-            scenarios—including blurry or zoomed-out iPhone photos—it leverages
-            dynamic data augmentation techniques like random cropping, rotation,
-            and color jittering during training. The pipeline is built in
-            TensorFlow, converted to ONNX for efficient inference, and served
-            through a lightweight FastAPI backend.
+            I hope Scout brings you the same excitement my mom and I feel each
+            morning when our backyard parrots swing by— happy birdwatching!
           </Typography>
         </Box>
       </Box>

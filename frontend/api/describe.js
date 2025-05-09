@@ -24,7 +24,6 @@ export default async function handler(req, res) {
     );
 
     const data = await openaiRes.json();
-    console.log("OpenAI raw response:", data);
 
     const message = data.choices?.[0]?.message?.content?.trim() || "";
     res.status(200).json({ description: message });
