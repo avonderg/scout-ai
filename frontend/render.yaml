@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: scout-frontend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run build

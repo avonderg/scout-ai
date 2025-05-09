@@ -1,0 +1,9 @@
+# Ignore large data files
+data/
+*.zip
+model/bird_classifier.h5
+
+# Virtual environments
+backend/venv/
+venv/
+.env/
