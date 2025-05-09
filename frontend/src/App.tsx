@@ -10,6 +10,7 @@ import {
   CardContent,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import "@fontsource/capriola";
@@ -63,12 +64,18 @@ function App() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [description, setDescription] = useState("");
 
   const uploadRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const [successToast, setSuccessToast] = useState(false);
+  const hasUploadedPhoto = !!file;
+  const hasPrediction = !!result;
 
   const predict = async () => {
     if (!file) return;
+    setLoading(true);
 
     setError(null);
 
@@ -91,10 +98,24 @@ function App() {
 
       const data = await res.json();
       setResult(data);
+      setSuccessToast(true);
+
+      // Get GPT-based bird description
+      const gptRes = await fetch("/api/describe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          species: result.species.replace(/^\d+\./, "").replace(/_/g, " "),
+        }),
+      });
+      const gptData = await gptRes.json();
+      setDescription(gptData);
     } catch (err: any) {
       console.error("Prediction error:", err);
       setError("Oops! Something went wrong while identifying your bird.");
       setOpenSnackbar(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,17 +131,17 @@ function App() {
     window.scrollTo(0, 0);
   }, []);
 
-  const getConfidenceLabel = (confidence: string) => {
+  const getConfidenceMood = (confidence: string) => {
     const value =
       typeof confidence === "string"
         ? parseFloat(confidence.replace("%", ""))
         : confidence;
-
-    if (value >= 90) return "Very High";
-    if (value >= 75) return "High";
-    if (value >= 60) return "Moderate";
-    if (value >= 40) return "Low";
-    return "Very Low";
+    if (value >= 90) return { emoji: "🎯", phrase: "it is very confident!" };
+    if (value >= 75) return { emoji: "👍", phrase: " looking good!" };
+    if (value >= 60) return { emoji: "🤔", phrase: "it is slightly unsure" };
+    if (value >= 40)
+      return { emoji: "😬", phrase: "it seems to be mostly guessing" };
+    return { emoji: "🙈", phrase: "guessing wildly!" };
   };
 
   return (
@@ -190,18 +211,18 @@ function App() {
           <Lottie animationData={birdAnimation} loop={false} />
         </Box>
         <Typography variant="h2" gutterBottom>
-          Welcome to <span style={{ color: "#7877E6" }}>Scout</span>
+          See a bird? <span style={{ color: "#7877E6" }}>Scout it.</span>
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" mb={4}>
-          Curious about the birds you see? Upload a photo—we'll tell you what’s
-          perched nearby.
+          Curious about that bird you just saw? Upload a photo— Scout tell you
+          what’s perched nearby.
         </Typography>
         <Button
           variant="contained"
           size="large"
           color="primary"
           onClick={() =>
-            scroll.scrollTo((uploadRef.current?.offsetTop ?? 0) - 80, {
+            scroll.scrollTo((uploadRef.current?.offsetTop ?? 0) - 40, {
               smooth: true,
             })
           }
@@ -220,8 +241,8 @@ function App() {
           minHeight: "100vh",
           alignItems: "center",
           justifyContent: "center",
-          // background: theme.palette.background.default,
         }}
+        id="upload-section"
       >
         <Container maxWidth="sm">
           <Paper
@@ -230,7 +251,6 @@ function App() {
               p: 4,
               textAlign: "center",
               backdropFilter: "blur(7.5px)",
-              // backgroundColor: "rgba(255, 255, 255, 0.3)",
               WebkitBackdropFilter: "blur(7.5px)",
               borderRadius: "10px",
               boxShadow: "0 8px 32px 0 rgba( 0, 0, 0, 0.18 )",
@@ -241,7 +261,11 @@ function App() {
             }}
           >
             <Typography variant="h5" mb={3}>
-              Upload Your Photo
+              Upload your Bird Photo
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Scout will try to identify the species using AI. Results may be
+              imperfect — our model is still learning!
             </Typography>
 
             {/* Buttons row */}
@@ -259,6 +283,8 @@ function App() {
                 id="upload-input"
                 style={{ display: "none" }}
                 onChange={(e) => {
+                  setFile(null);
+                  setResult(null);
                   const files = e.target.files;
                   if (files && files[0]) {
                     const f = files[0];
@@ -278,18 +304,51 @@ function App() {
                   }
                 }}
               />
-              <label htmlFor="upload-input">
-                <Button variant="outlined" component="span" color="primary">
-                  Choose Bird
-                </Button>
-              </label>
+              {/* 1. SELECT PHOTO (initial state or retry) */}
+              {!hasUploadedPhoto && (
+                <label htmlFor="upload-input">
+                  <Button variant="outlined" component="span" color="primary">
+                    Select Photo
+                  </Button>
+                </label>
+              )}
 
-              {file && (
-                <Button variant="contained" color="primary" onClick={predict}>
-                  Identify Bird
+              {/* 2. IDENTIFY BIRD (after photo selected but before prediction) */}
+              {hasUploadedPhoto && !hasPrediction && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={predict}
+                  disabled={loading}
+                  startIcon={
+                    loading ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : null
+                  }
+                >
+                  {loading ? "Identifying..." : "Identify Bird"}
                 </Button>
               )}
+
+              {/* 3. UPLOAD ANOTHER PHOTO (after result shown) */}
+              {hasUploadedPhoto && hasPrediction && (
+                <label htmlFor="upload-input">
+                  <Button variant="outlined" component="span" color="primary">
+                    Upload Another Photo
+                  </Button>
+                </label>
+              )}
+              {loading && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  Scout is thinking... 🧠
+                </Typography>
+              )}
             </Box>
+
             {/* Image preview */}
             {preview && (
               <Box
@@ -313,7 +372,6 @@ function App() {
                 p: 4,
                 textAlign: "center",
                 backdropFilter: "blur(7.5px)",
-                // backgroundColor: "rgba(255, 255, 255, 0.3)",
                 WebkitBackdropFilter: "blur(7.5px)",
                 borderRadius: "10px",
                 boxShadow: "0 8px 32px 0 rgba( 0, 0, 0, 0.18 )",
@@ -324,7 +382,7 @@ function App() {
             >
               <CardContent>
                 <Typography variant="h6">
-                  We think it’s a{" "}
+                  🎉 It's a{" "}
                   <strong style={{ color: "#7877E6" }}>
                     {
                       result.species
@@ -333,12 +391,16 @@ function App() {
                     }
                   </strong>
                 </Typography>
-                <Typography color="text.secondary">
-                  Confidence: <strong>{result.confidence + " "}</strong>
-                  <span style={{ fontStyle: "italic" }}>
-                    ({getConfidenceLabel(result.confidence)})
-                  </span>
+                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                  {getConfidenceMood(result.confidence).emoji} Scout is{" "}
+                  {result.confidence} sure —{" "}
+                  {getConfidenceMood(result.confidence).phrase}
                 </Typography>
+                {description && (
+                  <Typography sx={{ mt: 2, fontStyle: "italic" }}>
+                    {description}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           )}
@@ -428,6 +490,16 @@ function App() {
       >
         <Alert onClose={() => setOpenSnackbar(false)} severity="error">
           {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={successToast}
+        autoHideDuration={4000}
+        onClose={() => setSuccessToast(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setSuccessToast(false)} severity="success">
+          Bird identified successfully!
         </Alert>
       </Snackbar>
     </ThemeProvider>
