@@ -105,7 +105,7 @@ function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          species: result.species.replace(/^\d+\./, "").replace(/_/g, " "),
+          species: data.species.replace(/^\d+\./, "").replace(/_/g, " "),
         }),
       });
       const gptData = await gptRes.json();
