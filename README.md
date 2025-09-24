@@ -1,7 +1,9 @@
-# Scout-AI
+# scout.ai
 
 **Project Overview**  
-Scout-AI is a full-stack web application that identifies bird species from user-uploaded photos. It pairs a React/TypeScript frontend (deployed on Vercel) with a FastAPI/ONNX backend (hosted on Render). Under the hood, a MobileNetV2 model is fine-tuned on over 200 species using more than 11,000 high-resolution images from the CUB-200-2011 dataset, trained in TensorFlow and converted to ONNX for fast inference.
+scout.ai is a full-stack web application that identifies bird species from user-uploaded photos. It pairs a React/TypeScript frontend (deployed on Vercel) with a FastAPI/ONNX backend (hosted on Render). Under the hood, a MobileNetV2 model is fine-tuned on over 200 species using more than 11,000 high-resolution images from the CUB-200-2011 dataset, trained in TensorFlow and converted to ONNX for fast inference.
+
+https://scoutai-woad.vercel.app/
 
 ---
 
@@ -176,3 +178,4 @@ scout-ai/
 * Please open an issue first to discuss your proposed changes.
 * All code contributions require review and approval before merging.
 * Maintainers reserve the right to revise or adjust contributions to ensure stability.
+
